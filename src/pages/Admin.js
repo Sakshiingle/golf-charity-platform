@@ -22,6 +22,18 @@ function Admin() {
   const checkAdmin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate('/login'); return; }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+    
+    if (!profile?.is_admin) {
+      alert('Access denied. Admins only.');
+      navigate('/dashboard');
+      return;
+    }
   };
 
   const fetchAll = async () => {

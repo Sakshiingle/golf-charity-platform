@@ -100,14 +100,23 @@ function Dashboard() {
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Navbar */}
       <nav className="bg-gray-800 px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-green-400">GolfCharity</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-300 text-sm">{profile?.email}</span>
-          <button onClick={handleLogout} className="px-4 py-2 bg-red-500 rounded hover:bg-red-600 text-sm">
-            Logout
-          </button>
-        </div>
-      </nav>
+  <h1 className="text-xl font-bold text-green-400">GolfCharity</h1>
+  <div className="flex items-center gap-4">
+    <span className="text-gray-300 text-sm hidden md:block">{profile?.email}</span>
+    {profile?.is_admin && (
+      <button
+        onClick={() => navigate('/admin')}
+        className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 text-sm font-bold">
+        🔧 Admin Panel
+      </button>
+    )}
+    <button
+      onClick={handleLogout}
+      className="px-4 py-2 bg-red-500 rounded hover:bg-red-600 text-sm">
+      Logout
+    </button>
+  </div>
+</nav>
 
       {/* Message */}
       {message && (

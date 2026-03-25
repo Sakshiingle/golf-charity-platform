@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
+import WinningsTab from '../components/WinningsTab';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -128,7 +129,7 @@ function Dashboard() {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-700 px-6 mt-4">
-        {['overview', 'scores', 'charity', 'subscription'].map((tab) => (
+      {['overview', 'scores', 'charity', 'subscription', 'winnings'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -285,6 +286,13 @@ function Dashboard() {
           </div>
         )}
       </div>
+      {/* WINNINGS TAB */}
+{activeTab === 'winnings' && (
+  <div>
+    <h3 className="text-xl font-bold mb-6">My Winnings</h3>
+    <WinningsTab userId={user?.id} />
+  </div>
+)}
     </div>
   );
 }

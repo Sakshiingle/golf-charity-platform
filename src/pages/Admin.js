@@ -22,13 +22,11 @@ function Admin() {
   const checkAdmin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate('/login'); return; }
-    
     const { data: profile } = await supabase
       .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
-    
     if (!profile?.is_admin) {
       alert('Access denied. Admins only.');
       navigate('/dashboard');
@@ -51,37 +49,29 @@ function Admin() {
   };
 
   const runDraw = async () => {
-    // Generate 5 random numbers between 1-45
     const winningNumbers = Array.from({ length: 5 }, () =>
       Math.floor(Math.random() * 45) + 1
     );
-
     const { data: draw, error } = await supabase.from('draws').insert([{
       draw_date: new Date().toISOString().split('T')[0],
       winning_numbers: winningNumbers,
       status: 'published',
       jackpot_amount: users.filter(u => u.subscription_status === 'active').length * 400,
     }]).select().single();
-
     if (error) { setMessage('Error running draw'); return; }
-
-    // Check winners among all users' scores
     const { data: allScores } = await supabase.from('scores').select('*');
     const userScoreMap = {};
     allScores?.forEach(s => {
       if (!userScoreMap[s.user_id]) userScoreMap[s.user_id] = [];
       userScoreMap[s.user_id].push(s.score);
     });
-
     for (const [userId, userScores] of Object.entries(userScoreMap)) {
       const matches = userScores.filter(s => winningNumbers.includes(s)).length;
       let matchType = null;
       let prizeAmount = 0;
-
       if (matches >= 5) { matchType = '5-match'; prizeAmount = draw.jackpot_amount * 0.4; }
       else if (matches >= 4) { matchType = '4-match'; prizeAmount = draw.jackpot_amount * 0.35; }
       else if (matches >= 3) { matchType = '3-match'; prizeAmount = draw.jackpot_amount * 0.25; }
-
       if (matchType) {
         await supabase.from('winners').insert([{
           draw_id: draw.id,
@@ -89,10 +79,10 @@ function Admin() {
           match_type: matchType,
           prize_amount: prizeAmount,
           payment_status: 'pending',
+          verification_status: 'pending',
         }]);
       }
     }
-
     setMessage(`Draw completed! Winning numbers: ${winningNumbers.join(', ')}`);
     fetchAll();
   };
@@ -118,6 +108,15 @@ function Admin() {
     fetchAll();
   };
 
+  const updateVerification = async (winnerId, status) => {
+    await supabase.from('winners').update({
+      verification_status: status,
+      verified_at: new Date().toISOString()
+    }).eq('id', winnerId);
+    setMessage(`Winner ${status} successfully`);
+    fetchAll();
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
       <p className="text-white text-xl">Loading Admin Panel...</p>
@@ -126,7 +125,7 @@ function Admin() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Navbar */}
+
       <nav className="bg-red-900 px-6 py-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">🔧 Admin Panel</h1>
         <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 text-sm">
@@ -134,7 +133,6 @@ function Admin() {
         </button>
       </nav>
 
-      {/* Message */}
       {message && (
         <div className="bg-green-500 text-white text-center py-2 text-sm">
           {message}
@@ -142,7 +140,6 @@ function Admin() {
         </div>
       )}
 
-      {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-6">
         {[
           { label: 'Total Users', value: users.length },
@@ -157,7 +154,6 @@ function Admin() {
         ))}
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b border-gray-700 px-6">
         {['users', 'draw', 'charities', 'winners'].map((tab) => (
           <button
@@ -173,7 +169,6 @@ function Admin() {
 
       <div className="px-6 py-8 max-w-6xl mx-auto">
 
-        {/* USERS TAB */}
         {activeTab === 'users' && (
           <div>
             <h3 className="text-xl font-bold mb-4">All Users ({users.length})</h3>
@@ -208,22 +203,18 @@ function Admin() {
           </div>
         )}
 
-        {/* DRAW TAB */}
         {activeTab === 'draw' && (
           <div>
             <h3 className="text-xl font-bold mb-4">Draw Management</h3>
             <div className="bg-gray-800 p-6 rounded-lg mb-6">
               <h4 className="font-bold text-red-400 mb-2">Run Monthly Draw</h4>
               <p className="text-gray-400 text-sm mb-4">
-                This generates 5 random winning numbers and checks all user scores for matches.
+                Generates 5 random winning numbers and checks all user scores for matches.
               </p>
-              <button
-                onClick={runDraw}
-                className="px-8 py-3 bg-red-500 rounded-lg font-bold hover:bg-red-600">
+              <button onClick={runDraw} className="px-8 py-3 bg-red-500 rounded-lg font-bold hover:bg-red-600">
                 🎲 Run Draw Now
               </button>
             </div>
-
             <h4 className="font-bold mb-3">Previous Draws</h4>
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <table className="w-full">
@@ -254,7 +245,6 @@ function Admin() {
           </div>
         )}
 
-        {/* CHARITIES TAB */}
         {activeTab === 'charities' && (
           <div>
             <h3 className="text-xl font-bold mb-4">Manage Charities</h3>
@@ -287,15 +277,12 @@ function Admin() {
                 </button>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {charities.map((c) => (
                 <div key={c.id} className="bg-gray-800 p-4 rounded-lg">
                   <h4 className="font-bold mb-2">{c.name}</h4>
                   <p className="text-gray-400 text-sm mb-4">{c.description}</p>
-                  <button
-                    onClick={() => deleteCharity(c.id)}
-                    className="px-4 py-2 bg-red-600 rounded text-sm hover:bg-red-700">
+                  <button onClick={() => deleteCharity(c.id)} className="px-4 py-2 bg-red-600 rounded text-sm hover:bg-red-700">
                     Delete
                   </button>
                 </div>
@@ -304,29 +291,47 @@ function Admin() {
           </div>
         )}
 
-        {/* WINNERS TAB */}
         {activeTab === 'winners' && (
           <div>
-            <h3 className="text-xl font-bold mb-4">Winners Management</h3>
+            <h3 className="text-xl font-bold mb-4">Winners & Verification</h3>
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead className="bg-gray-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-gray-300">User ID</th>
-                    <th className="px-4 py-3 text-left text-gray-300">Match Type</th>
+                    <th className="px-4 py-3 text-left text-gray-300">User</th>
+                    <th className="px-4 py-3 text-left text-gray-300">Match</th>
                     <th className="px-4 py-3 text-left text-gray-300">Prize</th>
-                    <th className="px-4 py-3 text-left text-gray-300">Status</th>
-                    <th className="px-4 py-3 text-left text-gray-300">Action</th>
+                    <th className="px-4 py-3 text-left text-gray-300">Proof</th>
+                    <th className="px-4 py-3 text-left text-gray-300">Verification</th>
+                    <th className="px-4 py-3 text-left text-gray-300">Payment</th>
+                    <th className="px-4 py-3 text-left text-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {winners.length === 0 ? (
-                    <tr><td colSpan="5" className="px-4 py-8 text-center text-gray-400">No winners yet. Run a draw first.</td></tr>
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-400">
+                        No winners yet. Run a draw first.
+                      </td>
+                    </tr>
                   ) : winners.map((w) => (
                     <tr key={w.id} className="border-t border-gray-700">
                       <td className="px-4 py-3 text-gray-300 text-xs">{w.user_id?.slice(0, 8)}...</td>
                       <td className="px-4 py-3 text-yellow-400 font-bold">{w.match_type}</td>
                       <td className="px-4 py-3 text-green-400">₹{w.prize_amount}</td>
+                      <td className="px-4 py-3 text-gray-300 text-xs max-w-xs truncate">
+                        {w.proof_url || 'No proof yet'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                          w.verification_status === 'approved' ? 'bg-green-500' :
+                          w.verification_status === 'rejected' ? 'bg-red-500' :
+                          w.verification_status === 'submitted' ? 'bg-yellow-500 text-black' :
+                          'bg-gray-500'
+                        }`}>
+                          {w.verification_status || 'pending'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-bold ${
                           w.payment_status === 'paid' ? 'bg-green-500' : 'bg-yellow-500 text-black'
@@ -335,13 +340,29 @@ function Admin() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {w.payment_status !== 'paid' && (
-                          <button
-                            onClick={() => updatePayment(w.id)}
-                            className="px-3 py-1 bg-green-500 rounded text-xs hover:bg-green-600">
-                            Mark Paid
-                          </button>
-                        )}
+                        <div className="flex gap-2 flex-wrap">
+                          {w.verification_status === 'submitted' && (
+                            <>
+                              <button
+                                onClick={() => updateVerification(w.id, 'approved')}
+                                className="px-2 py-1 bg-green-500 rounded text-xs hover:bg-green-600">
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => updateVerification(w.id, 'rejected')}
+                                className="px-2 py-1 bg-red-500 rounded text-xs hover:bg-red-600">
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {w.payment_status !== 'paid' && w.verification_status === 'approved' && (
+                            <button
+                              onClick={() => updatePayment(w.id)}
+                              className="px-2 py-1 bg-blue-500 rounded text-xs hover:bg-blue-600">
+                              Mark Paid
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -350,6 +371,7 @@ function Admin() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

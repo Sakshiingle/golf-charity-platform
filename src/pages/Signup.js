@@ -24,9 +24,9 @@ function Signup() {
       email: formData.email,
       password: formData.password,
     });
-
-    if (error) {
-      setError(error.message);
+    
+    if (error || !data?.user) {
+      setError(error?.message || 'Signup failed. Please try again.');
       setLoading(false);
       return;
     }

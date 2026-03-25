@@ -58,9 +58,14 @@ function Admin() {
   };
 
   const runDraw = async () => {
-    const winningNumbers = Array.from({ length: 5 }, () =>
-      Math.floor(Math.random() * 45) + 1,
-    );
+    const winningNumbers = [];
+while (winningNumbers.length < 5) {
+  const num = Math.floor(Math.random() * 45) + 1;
+  if (!winningNumbers.includes(num)) {
+    winningNumbers.push(num);
+  }
+}
+    
     const { data: draw, error } = await supabase
       .from('draws')
       .insert([
@@ -79,41 +84,80 @@ function Admin() {
       setMessage('Error running draw');
       return;
     }
-    const { data: allScores } = await supabase.from('scores').select('*');
+    const { data: allScores, error: scoreError } = await supabase
+  .from('scores')
+  .select('*');
+
+if (scoreError) {
+  setMessage('Error fetching scores');
+  return;
+}
     const userScoreMap = {};
     allScores?.forEach((s) => {
       if (!userScoreMap[s.user_id]) userScoreMap[s.user_id] = [];
       userScoreMap[s.user_id].push(s.score);
     });
-    for (const [userId, userScores] of Object.entries(userScoreMap)) {
-      const matches = userScores.filter((s) =>
-        winningNumbers.includes(s),
-      ).length;
-      let matchType = null;
-      let prizeAmount = 0;
-      if (matches >= 5) {
-        matchType = '5-match';
-        prizeAmount = draw.jackpot_amount * 0.4;
-      } else if (matches >= 4) {
-        matchType = '4-match';
-        prizeAmount = draw.jackpot_amount * 0.35;
-      } else if (matches >= 3) {
-        matchType = '3-match';
-        prizeAmount = draw.jackpot_amount * 0.25;
-      }
-      if (matchType) {
-        await supabase.from('winners').insert([
-          {
-            draw_id: draw.id,
-            user_id: userId,
-            match_type: matchType,
-            prize_amount: prizeAmount,
-            payment_status: 'pending',
-            verification_status: 'pending',
-          },
-        ]);
-      }
-    }
+    // STEP 1: Collect winners first
+const winnersList = [];
+
+for (const [userId, userScores] of Object.entries(userScoreMap)) {
+  const uniqueUserScores = [...new Set(userScores)];
+  const uniqueDrawNumbers = [...new Set(winningNumbers)];
+
+  const matches = uniqueUserScores.filter((s) =>
+    uniqueDrawNumbers.includes(s)
+  ).length;
+
+  let matchType = null;
+
+  if (matches === 5) matchType = '5-match';
+  else if (matches === 4) matchType = '4-match';
+  else if (matches === 3) matchType = '3-match';
+
+  if (matchType) {
+    winnersList.push({
+      user_id: userId,
+      match_type: matchType,
+    });
+  }
+}
+
+// STEP 2: Calculate prize split
+const fiveMatchWinners = winnersList.filter(w => w.match_type === '5-match');
+const fourMatchWinners = winnersList.filter(w => w.match_type === '4-match');
+const threeMatchWinners = winnersList.filter(w => w.match_type === '3-match');
+
+const fivePrize = fiveMatchWinners.length
+  ? (draw.jackpot_amount * 0.4) / fiveMatchWinners.length
+  : 0;
+
+const fourPrize = fourMatchWinners.length
+  ? (draw.jackpot_amount * 0.35) / fourMatchWinners.length
+  : 0;
+
+const threePrize = threeMatchWinners.length
+  ? (draw.jackpot_amount * 0.25) / threeMatchWinners.length
+  : 0;
+
+// STEP 3: Insert winners with correct prize
+for (const winner of winnersList) {
+  let prizeAmount = 0;
+
+  if (winner.match_type === '5-match') prizeAmount = fivePrize;
+  if (winner.match_type === '4-match') prizeAmount = fourPrize;
+  if (winner.match_type === '3-match') prizeAmount = threePrize;
+
+  await supabase.from('winners').insert([
+    {
+      draw_id: draw.id,
+      user_id: winner.user_id,
+      match_type: winner.match_type,
+      prize_amount: prizeAmount,
+      payment_status: 'pending',
+      verification_status: 'pending',
+    },
+  ]);
+}
     setMessage(
       `Draw completed! Winning numbers: ${winningNumbers.join(', ')}`,
     );

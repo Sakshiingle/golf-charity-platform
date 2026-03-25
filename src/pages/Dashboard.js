@@ -51,25 +51,32 @@ function Dashboard() {
   };
 
   const handleAddScore = async () => {
+    // 🔥 SUBSCRIPTION VALIDATION (ADDED)
+    if (profile?.subscription_status !== 'active') {
+      setMessage('Please subscribe before adding scores');
+      return;
+    }
+  
     if (!newScore || !newDate) {
       setMessage('Please enter score and date');
       return;
     }
+  
     if (newScore < 1 || newScore > 45) {
       setMessage('Score must be between 1 and 45');
       return;
     }
-
+  
     const { data: existingScores } = await supabase
       .from('scores')
       .select('*')
       .eq('user_id', user.id)
       .order('score_date', { ascending: true });
-
+  
     if (existingScores && existingScores.length >= 5) {
       await supabase.from('scores').delete().eq('id', existingScores[0].id);
     }
-
+  
     const { error } = await supabase.from('scores').insert([
       {
         user_id: user.id,
@@ -77,11 +84,12 @@ function Dashboard() {
         score_date: newDate,
       },
     ]);
-
+  
     if (error) {
       setMessage('Error adding score');
       return;
     }
+  
     setMessage('Score added successfully!');
     setNewScore('');
     setNewDate('');
@@ -242,11 +250,16 @@ function Dashboard() {
                   className="px-4 py-2 bg-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
                 <button
-                  onClick={handleAddScore}
-                  className="px-6 py-2 bg-green-500 rounded hover:bg-green-600 font-bold"
-                >
-                  Add Score
-                </button>
+  onClick={handleAddScore}
+  disabled={profile?.subscription_status !== 'active'}
+  className={`px-6 py-2 rounded font-bold ${
+    profile?.subscription_status === 'active'
+      ? 'bg-green-500 hover:bg-green-600'
+      : 'bg-gray-500 cursor-not-allowed'
+  }`}
+>
+  Add Score
+</button>
               </div>
               <p className="text-gray-400 text-sm mt-2">
                 Only last 5 scores are kept. Oldest is removed automatically.

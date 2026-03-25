@@ -3,7 +3,7 @@
 A full-stack subscription-based web application combining golf performance tracking, charity fundraising, and a monthly draw-based reward engine.
 
 ## 🚀 Live Demo
-[Add your Vercel URL here]
+https://golf-charity-platform-bay.vercel.app/
 
 ## 📋 Test Credentials
 

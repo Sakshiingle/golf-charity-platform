@@ -1,70 +1,164 @@
-# Getting Started with Create React App
+# GolfCharity - Golf Subscription & Charity Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack subscription-based web application combining golf performance tracking, charity fundraising, and a monthly draw-based reward engine.
 
-## Available Scripts
+## 🚀 Live Demo
+[Add your Vercel URL here]
 
-In the project directory, you can run:
+## 📋 Test Credentials
 
-### `npm start`
+### Admin Account
+- **Email:** isakshi713@gmail.com
+- **Password:** [your password]
+- **Access:** Full admin panel with draw management, user management, charity management
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Test User Account
+- **Email:** dsakshi1013@gmail.com
+- **Password:** [your password]
+- **Access:** User dashboard, scores, charity selection, subscription, winnings
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 🛠️ Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React.js |
+| Styling | Tailwind CSS |
+| Database | Supabase (PostgreSQL) |
+| Authentication | Supabase Auth |
+| Deployment | Vercel |
+| Version Control | GitHub |
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## ✨ Features
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### User Features
+- Signup and login with secure authentication
+- Monthly and yearly subscription plans
+- Golf score entry (Stableford format, 1-45 range)
+- Automatic rolling 5-score system (oldest replaced automatically)
+- Charity selection from available charities
+- Configurable charity contribution percentage
+- Monthly draw participation
+- Winnings overview with proof submission for verification
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Admin Features
+- Role-based admin access (is_admin flag)
+- User management — view all users, subscription status, plans
+- Draw management — run monthly draws, view draw history
+- Charity management — add, edit, delete charities
+- Winner verification — approve/reject proof submissions
+- Payment tracking — mark winners as paid
 
-### `npm run eject`
+### Draw System
+- 5 random winning numbers generated (1-45 range)
+- Score matching logic:
+  - 5 matches = 40% of prize pool (Jackpot)
+  - 4 matches = 35% of prize pool
+  - 3 matches = 25% of prize pool
+- Jackpot rolls over if no 5-match winner
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🗄️ Database Schema
+```sql
+profiles     — user data, subscription status, charity selection
+scores       — golf scores linked to users (max 5 per user)
+charities    — charity listings with descriptions and images
+draws        — monthly draw records with winning numbers
+winners      — winner records with verification and payment status
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 🔐 Security
+- Supabase Auth for secure login/signup
+- Role-based admin protection (is_admin column)
+- Protected routes — unauthenticated users redirected to login
+- Environment variables for sensitive keys
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 📱 Pages
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+| Page | Route | Access |
+|------|-------|--------|
+| Landing | / | Public |
+| Login | /login | Public |
+| Signup | /signup | Public |
+| Dashboard | /dashboard | Authenticated |
+| Admin Panel | /admin | Admin only |
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🚀 Local Setup
 
-### Analyzing the Bundle Size
+### Prerequisites
+- Node.js v18+
+- npm
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/Sakshiingle/golf-charity-platform.git
+# Navigate to project
+cd golf-charity-platform
 
-### Making a Progressive Web App
+# Install dependencies
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+# Create .env file
+REACT_APP_SUPABASE_URL=your_supabase_url
+REACT_APP_SUPABASE_ANON_KEY=your_anon_key
 
-### Advanced Configuration
+# Start development server
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## 📦 Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- Frontend deployed on **Vercel**
+- Database hosted on **Supabase**
+- Environment variables configured in Vercel dashboard
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 📁 Project Structure
+```
+src/
+├── pages/
+│   ├── Landing.js      — Public landing page
+│   ├── Login.js        — Login page
+│   ├── Signup.js       — Signup page
+│   ├── Dashboard.js    — User dashboard
+│   └── Admin.js        — Admin panel
+├── components/
+│   └── WinningsTab.js  — Winner verification component
+├── supabase.js         — Supabase client configuration
+└── App.js              — Routes and protected route wrapper
+```
+
+---
+
+## 🧪 PRD Testing Checklist
+
+- ✅ User signup & login
+- ✅ Subscription flow (monthly and yearly)
+- ✅ Score entry — 5-score rolling logic
+- ✅ Draw system logic and simulation
+- ✅ Charity selection and contribution calculation
+- ✅ Winner verification flow and payout tracking
+- ✅ User Dashboard — all modules functional
+- ✅ Admin Panel — full control and usability
+- ✅ Data accuracy across all modules
+- ✅ Responsive design on mobile and desktop
+- ✅ Error handling and edge cases
+
+
+
+
+
